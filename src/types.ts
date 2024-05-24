@@ -22,7 +22,9 @@ export type Cell = {
 };
 export type InternalBoard = Array<Cell>;
 
-export type StrategyFn = () =>
+export type StrategyFn = (
+  board: InternalBoard,
+) =>
   | boolean
   | Array<{ index: number; eliminatedCandidate?: number; filledValue: number }>
   | -1;
@@ -30,7 +32,7 @@ export interface Strategy {
   title: string;
   score: number;
   fn: StrategyFn;
-  postFn?: () => void;
+  postFn?: (board: InternalBoard) => void;
   prevFn?: () => void;
   type: "value" | "elimination";
 }
@@ -78,3 +80,8 @@ export type AnalyzeData = {
 };
 
 export type SolveType = typeof SOLVE_MODE_STEP | typeof SOLVE_MODE_ALL;
+
+export type CombineInfo = {
+  cell: number;
+  candidates: Array<CellValue>;
+};
