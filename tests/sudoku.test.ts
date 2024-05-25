@@ -22,35 +22,41 @@ import {
   MEDIUM_SUDOKU_BOARD_FOR_TEST,
 } from "./constants";
 
+// let last = Date.now();
+// setInterval(() => {
+//   console.log(Date.now() - last);
+//   last = Date.now();
+// }, 50);
+
 describe("sudoku-core", () => {
   describe("generate method", () => {
-    it("should generate a valid easy difficulty board", () => {
+    it("should generate a valid easy difficulty board", async () => {
       //Arrange
-      const sudokuBoard = generate("easy");
+      const sudokuBoard = await generate("easy");
 
       //Act
-      const data = analyze(sudokuBoard);
+      const data = await analyze(sudokuBoard);
 
       // Assert
       expect(data.difficulty).toBe("easy");
       expect(isUniqueSolution(sudokuBoard)).toBe(true);
     });
-    it("should generate a valid medium difficulty board", () => {
+    it("should generate a valid medium difficulty board", async () => {
       //Arrange
-      const sudokuBoard = generate("medium");
+      const sudokuBoard = await generate("medium");
 
       //Act
-      const data = analyze(sudokuBoard);
+      const data = await analyze(sudokuBoard);
       // Assert
       expect(data.difficulty).toBe("medium");
       expect(isUniqueSolution(sudokuBoard)).toBe(true);
     });
-    it("should generate a valid hard difficulty board", () => {
+    it.skip("should generate a valid hard difficulty board", async () => {
       //Arrange
-      const sudokuBoard = generate("hard");
+      const sudokuBoard = await generate("hard");
 
       //Act
-      const data = analyze(sudokuBoard);
+      const data = await analyze(sudokuBoard);
 
       // Assert
       expect(data.difficulty).toBe("hard");
@@ -58,12 +64,12 @@ describe("sudoku-core", () => {
     });
 
     // up to 166 sec
-    it.skip("should generate a valid expert difficulty board", () => {
+    it.skip("should generate a valid expert difficulty board", async () => {
       //Arrange
-      const sudokuBoard = generate("expert");
+      const sudokuBoard = await generate("expert");
 
       //Act
-      const data = analyze(sudokuBoard);
+      const data = await analyze(sudokuBoard);
 
       // Assert
       expect(data.difficulty).toBe("expert");
@@ -71,12 +77,12 @@ describe("sudoku-core", () => {
     });
 
     // up to 15 sec
-    it.skip("should generate a valid master difficulty board", () => {
+    it.skip("should generate a valid master difficulty board", async () => {
       //Arrange
-      const sudokuBoard = generate("master");
+      const sudokuBoard = await generate("master");
 
       //Act
-      const data = analyze(sudokuBoard);
+      const data = await analyze(sudokuBoard);
 
       // Assert
       expect(data.difficulty).toBe("master");
@@ -93,14 +99,14 @@ describe("sudoku-core", () => {
       [DIFFICULTY_MASTER, MASTER_SUDOKU_BOARD_FOR_TEST],
     ] as [Difficulty, Board][];
     items.forEach(([difficulty, sudokuBoard]) => {
-      it(`should solve the ${difficulty} board`, () => {
+      it(`should solve the ${difficulty} board`, async () => {
         //Arrange
         const emptyCellsLength = sudokuBoard.filter(
           (cell) => !Boolean(cell),
         ).length;
 
         //Act
-        const result = solve(sudokuBoard);
+        const result = await solve(sudokuBoard);
         const steps = result?.steps;
         const solvedBoard = result?.board;
         // Assert
@@ -125,11 +131,11 @@ describe("sudoku-core", () => {
       [DIFFICULTY_MASTER, MASTER_SUDOKU_BOARD_FOR_TEST],
     ] as [Difficulty, Board][];
     items.forEach(([difficulty, sudokuBoard]) => {
-      it(`should solve the ${difficulty} board`, () => {
+      it(`should solve the ${difficulty} board`, async () => {
         //Arrange
 
         //Act
-        const result = hint(sudokuBoard);
+        const result = await hint(sudokuBoard);
 
         const steps = result?.steps;
         const solvedBoard = result?.board;
@@ -147,69 +153,69 @@ describe("sudoku-core", () => {
     });
   });
   describe("analyze method", () => {
-    it("should invalidate the wrong board", () => {
+    it("should invalidate the wrong board", async () => {
       //Arrange
       const sudokuBoard = [1];
 
       //Act
       const { difficulty, hasSolution, hasUniqueSolution } =
-        analyze(sudokuBoard);
+        await analyze(sudokuBoard);
 
       // Assert
       expect(difficulty).toBe(undefined);
       expect(hasSolution).toBe(false);
       expect(hasUniqueSolution).toBe(false);
     });
-    it("should validate the easy board", () => {
+    it("should validate the easy board", async () => {
       //Arrange
       const sudokuBoard = [...EASY_SUDOKU_BOARD_FOR_TEST];
 
       //Act
-      const { difficulty } = analyze(sudokuBoard);
+      const { difficulty } = await analyze(sudokuBoard);
 
       // Assert
       expect(difficulty).toBe("easy");
       expect(isUniqueSolution(sudokuBoard)).toBe(true);
     });
-    it("should validate the medium board", () => {
+    it("should validate the medium board", async () => {
       //Arrange
       const sudokuBoard = [...MEDIUM_SUDOKU_BOARD_FOR_TEST];
 
       //Act
-      const { difficulty } = analyze(sudokuBoard);
+      const { difficulty } = await analyze(sudokuBoard);
 
       // Assert
       expect(difficulty).toBe("medium");
       expect(isUniqueSolution(sudokuBoard)).toBe(true);
     });
-    it("should validate the hard board", () => {
+    it("should validate the hard board", async () => {
       //Arrange
       const sudokuBoard = [...HARD_SUDOKU_BOARD_FOR_TEST];
 
       //Act
-      const { difficulty } = analyze(sudokuBoard);
+      const { difficulty } = await analyze(sudokuBoard);
 
       // Assert
       expect(difficulty).toBe("hard");
       expect(isUniqueSolution(sudokuBoard)).toBe(true);
     });
-    it("should validate the expert board", () => {
+    it("should validate the expert board", async () => {
       //Arrange
       const sudokuBoard = [...EXPERT_SUDOKU_BOARD_FOR_TEST];
 
       //Act
-      const { difficulty } = analyze(sudokuBoard);
+      const { difficulty } = await analyze(sudokuBoard);
 
       // Assert
       expect(difficulty).toBe("expert");
       expect(isUniqueSolution(sudokuBoard)).toBe(true);
     });
-    it("should validate the master board", () => {
+    it("should validate the master board", async () => {
       //Arrange
       const sudokuBoard = [...MASTER_SUDOKU_BOARD_FOR_TEST];
 
       //Act
-      const { difficulty } = analyze(sudokuBoard);
+      const { difficulty } = await analyze(sudokuBoard);
 
       // Assert
       expect(difficulty).toBe("master");

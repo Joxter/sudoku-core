@@ -45,7 +45,7 @@ import {
 // Generating list of all houses (rows, columns, and boxes) in the sudoku board
 
 // Function to create a new Sudoku instance
-export function createSudokuInstance(options: Options = {}) {
+export async function createSudokuInstance(options: Options = {}) {
   const {
     onError,
     onUpdate,
@@ -245,7 +245,7 @@ export function createSudokuInstance(options: Options = {}) {
   };
 
   // Function to prepare the game board
-  const prepareGameBoard = () => {
+  async function prepareGameBoard() {
     const cells = Array.from({ length: BOARD_SIZE * BOARD_SIZE }, (_, i) => i);
     shuffle(cells);
     let removalCount = getRemovalCountBasedOnDifficulty(difficulty);
@@ -259,7 +259,7 @@ export function createSudokuInstance(options: Options = {}) {
       addValueToCellIndex(board, cellIndex, null);
       // Reset candidates, only in model.
       resetCandidates();
-      const boardAnalysis = analyzeBoard();
+      const boardAnalysis = await analyzeBoard();
       if (
         isValidAndEasyEnough(boardAnalysis, difficulty) &&
         isUniqueSolution(getBoard())
@@ -270,22 +270,24 @@ export function createSudokuInstance(options: Options = {}) {
         addValueToCellIndex(board, cellIndex, cellValue);
       }
     }
-  };
+  }
 
   // Initialization and public methods
 
-  // async function nextTickPromise() {
-  //   return new Promise((res) => {
-  //     setTimeout(res, 0);
-  //   });
-  // }
+  async function nextTickPromise() {
+    return new Promise((res) => {
+      // setTimeout(res, 0); // no blocking, 3.9
+      setImmediate(res); // no blocking, less 1
+      // process.nextTick(res); // blocking
+    });
+  }
 
-  function analyzeBoard() {
+  async function analyzeBoard() {
     let usedStrategiesClone = usedStrategies.slice();
     let boardClone = cloneBoard(board);
     let Continue: boolean | "value" | "elimination" = true;
     while (Continue) {
-      // await nextTickPromise();
+      await nextTickPromise();
       Continue = applySolvingStrategies(
         {
           strategyIndex: Continue === "elimination" ? 1 : 0,
@@ -330,14 +332,14 @@ export function createSudokuInstance(options: Options = {}) {
   }
 
   // Function to generate the Sudoku board
-  function generateBoard(): Board {
+  async function generateBoard(): Promise<Board> {
     generateBoardAnswerRecursively(0);
 
     const slicedBoard = cloneBoard(board);
 
-    function isBoardTooEasy() {
-      prepareGameBoard();
-      const data = analyzeBoard();
+    async function isBoardTooEasy() {
+      await prepareGameBoard();
+      const data = await analyzeBoard();
       if (data.hasSolution && data.difficulty) {
         return !isHardEnough(difficulty, data.difficulty);
       }
@@ -348,7 +350,7 @@ export function createSudokuInstance(options: Options = {}) {
       board = slicedBoard.slice();
     }
 
-    while (isBoardTooEasy()) {
+    while (await isBoardTooEasy()) {
       restoreBoardAnswer();
     }
 
@@ -412,10 +414,10 @@ export function createSudokuInstance(options: Options = {}) {
   if (initBoard) {
     board = convertInitialBoardToSerializedBoard(initBoard);
     updateCandidatesBasedOnCellsValue(board);
-    analyzeBoard();
+    await analyzeBoard();
   } else {
     initializeBoard();
-    generateBoard();
+    await generateBoard();
   }
 
   return {
