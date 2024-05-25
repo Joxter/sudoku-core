@@ -37,6 +37,7 @@ import {
   openSinglesStrategy,
   pointingEliminationStrategy,
   setBoardCellWithRandomCandidate,
+  shuffle,
   updateCandidatesBasedOnCellsValue,
   visualEliminationStrategy,
 } from "./utils";
@@ -60,13 +61,12 @@ export function createSudokuInstance(options: Options = {}) {
 
   // Function to reset the board variables
   const resetCandidates = () => {
-    board = new Array(BOARD_SIZE * BOARD_SIZE).fill(null).map((_, index) => ({
-      ...board[index],
-      candidates:
-        board[index].value == null
-          ? CANDIDATES.slice()
-          : board[index].candidates,
-    }));
+    board = board.map((cell) => {
+      return {
+        ...cell,
+        candidates: cell.value === null ? CANDIDATES.slice() : cell.candidates,
+      };
+    });
   };
 
   // Define different strategies to solve the Sudoku along with their scores
@@ -247,10 +247,13 @@ export function createSudokuInstance(options: Options = {}) {
   // Function to prepare the game board
   const prepareGameBoard = () => {
     const cells = Array.from({ length: BOARD_SIZE * BOARD_SIZE }, (_, i) => i);
+    shuffle(cells);
     let removalCount = getRemovalCountBasedOnDifficulty(difficulty);
-    while (removalCount > 0 && cells.length > 0) {
-      const randIndex = Math.floor(Math.random() * cells.length);
-      const cellIndex = cells.splice(randIndex, 1)[0];
+
+    let i = cells.length;
+    while (removalCount > 0 && i > 0) {
+      i--;
+      const cellIndex = cells[i];
       const cellValue = board[cellIndex].value;
       // Remove value from this cell
       addValueToCellIndex(board, cellIndex, null);
@@ -308,15 +311,17 @@ export function createSudokuInstance(options: Options = {}) {
       data.difficulty = boardDiff.difficulty;
       data.score = boardDiff.score;
     }
-    usedStrategies = usedStrategiesClone.slice();
-    board = boardClone;
 
-    usedStrategiesClone = usedStrategies.slice();
+    // usedStrategies = usedStrategiesClone.slice();
+    board = boardClone;
+    // usedStrategiesClone = usedStrategies.slice();
     boardClone = cloneBoard(board);
 
-    let solvedBoard: false | Board = [...getBoard()];
-    while (solvedBoard && !solvedBoard.every(Boolean)) {
-      solvedBoard = solveStep({ analyzeMode: true, iterationCount: 0 });
+    let solvedBoard: Board = [...getBoard()];
+    while (!solvedBoard.every(Boolean)) {
+      let ok = solveStep({ analyzeMode: true, iterationCount: 0 });
+      if (!ok) break;
+      solvedBoard = ok;
     }
 
     usedStrategies = usedStrategiesClone.slice();

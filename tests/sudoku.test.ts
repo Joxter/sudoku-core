@@ -45,7 +45,7 @@ describe("sudoku-core", () => {
       expect(data.difficulty).toBe("medium");
       expect(isUniqueSolution(sudokuBoard)).toBe(true);
     });
-    it.skip("should generate a valid hard difficulty board", () => {
+    it("should generate a valid hard difficulty board", () => {
       //Arrange
       const sudokuBoard = generate("hard");
 
@@ -56,6 +56,8 @@ describe("sudoku-core", () => {
       expect(data.difficulty).toBe("hard");
       expect(isUniqueSolution(sudokuBoard)).toBe(true);
     });
+
+    // up to 166 sec
     it.skip("should generate a valid expert difficulty board", () => {
       //Arrange
       const sudokuBoard = generate("expert");
@@ -68,6 +70,7 @@ describe("sudoku-core", () => {
       expect(isUniqueSolution(sudokuBoard)).toBe(true);
     });
 
+    // up to 15 sec
     it.skip("should generate a valid master difficulty board", () => {
       //Arrange
       const sudokuBoard = generate("master");

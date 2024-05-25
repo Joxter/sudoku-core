@@ -22,33 +22,36 @@ function isValid(board: Board, index: number, num: number): boolean {
   return true;
 }
 
-let solutionCount = 0;
+function solveSudoku(board: Board): number {
+  let solutionCount = 0;
 
-function solveSudoku(board: Board): boolean {
-  for (let i = 0; i < 81; i++) {
-    if (!board[i]) {
+  _solveSudoku();
+
+  return solutionCount;
+
+  function _solveSudoku(): boolean {
+    for (let i = 0; i < 81; i++) {
+      if (board[i]) continue;
+
       for (let num = 1; num <= 9; num++) {
         if (isValid(board, i, num)) {
           board[i] = num;
-          solveSudoku(board);
+          _solveSudoku();
           if (solutionCount > 1) {
             return false;
           }
           board[i] = null;
         }
       }
+
       return false;
     }
+    solutionCount++;
+    return solutionCount === 1;
   }
-  solutionCount++;
-  if (solutionCount > 1) {
-    return false;
-  }
-  return true;
 }
 
 export function isUniqueSolution(board: Board): boolean {
-  solutionCount = 0;
-  solveSudoku([...board]);
+  let solutionCount = solveSudoku([...board]);
   return solutionCount === 1;
 }

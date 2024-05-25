@@ -73,9 +73,7 @@ export const generateHouseIndexList = (boardSize: number): Houses[] => {
 };
 
 export const isBoardFinished = (board: InternalBoard): boolean => {
-  return new Array(BOARD_SIZE * BOARD_SIZE)
-    .fill(null)
-    .every((_, i) => board[i].value !== null);
+  return board.every((cell) => cell.value !== null);
 };
 
 const isEasyEnough = (
@@ -884,4 +882,17 @@ export function setBoardCellWithRandomCandidate(
   const value = getRandomCandidateOfCell(candidates);
   addValueToCellIndex(board, cellIndex, value);
   return true;
+}
+
+export function shuffle<T>(array: T[]) {
+  let currentIndex = array.length;
+
+  while (currentIndex != 0) {
+    let randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+    [array[currentIndex], array[randomIndex]] = [
+      array[randomIndex],
+      array[currentIndex],
+    ];
+  }
 }
