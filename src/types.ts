@@ -61,6 +61,7 @@ export interface Options {
   onUpdate?: ({ strategy, updates, type }: SolvingStep) => void;
   initBoard?: Board;
   difficulty?: Difficulty;
+  timeLimit?: number
 }
 
 // we call row, column, and box a house

@@ -13,6 +13,14 @@ export const DIFFICULTY_HARD = "hard";
 export const DIFFICULTY_EXPERT = "expert";
 export const DIFFICULTY_MASTER = "master";
 
+export const all_difficulties = [
+  DIFFICULTY_EASY,
+  DIFFICULTY_MEDIUM,
+  DIFFICULTY_HARD,
+  DIFFICULTY_EXPERT,
+  DIFFICULTY_MASTER,
+] as const;
+
 export const SOLVE_MODE_STEP = "step";
 export const SOLVE_MODE_ALL = "all";
 

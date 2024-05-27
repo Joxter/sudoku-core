@@ -1,13 +1,16 @@
 type Board = (number | null)[];
 
-function isValid(board: Board, index: number, num: number): boolean {
+export function isInvalid(
+  board: Board,
+  index: number,
+  num: number,
+): number | false {
   const row = Math.floor(index / 9);
   const col = index % 9;
   // Check if number already exists in row or column
   for (let i = 0; i < 9; i++) {
-    if (board[row * 9 + i] === num || board[col + 9 * i] === num) {
-      return false;
-    }
+    if (board[row * 9 + i] === num) return row * 9 + i;
+    if (board[col + 9 * i] === num) return col + 9 * i;
   }
   // Check if number already exists in 3x3 box
   const startRow = row - (row % 3);
@@ -15,11 +18,11 @@ function isValid(board: Board, index: number, num: number): boolean {
   for (let i = 0; i < 3; i++) {
     for (let j = 0; j < 3; j++) {
       if (board[(startRow + i) * 9 + startCol + j] === num) {
-        return false;
+        return (startRow + i) * 9 + startCol + j;
       }
     }
   }
-  return true;
+  return false;
 }
 
 function solveSudoku(board: Board): number {
@@ -34,7 +37,7 @@ function solveSudoku(board: Board): number {
       if (board[i]) continue;
 
       for (let num = 1; num <= 9; num++) {
-        if (isValid(board, i, num)) {
+        if (isInvalid(board, i, num) === false) {
           board[i] = num;
           _solveSudoku();
           if (solutionCount > 1) {

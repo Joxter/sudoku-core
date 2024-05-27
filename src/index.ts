@@ -6,6 +6,7 @@ import {
   type Difficulty,
   type SolvingStep,
   type SolvingResult,
+  Options,
 } from "./types";
 
 export { type AnalyzeData, type Board, type Difficulty, type SolvingStep };
@@ -20,10 +21,10 @@ export async function analyze(Board: Board): Promise<AnalyzeData> {
   };
 }
 
-export async function generate(difficulty: Difficulty): Promise<Board> {
-  const { getBoard } = await createSudokuInstance({ difficulty });
+export async function generate(options: Options): Promise<Board> {
+  const { getBoard } = await createSudokuInstance(options);
   if (!(await analyze(getBoard())).hasUniqueSolution) {
-    return generate(difficulty);
+    return generate(options);
   }
   return getBoard();
 }

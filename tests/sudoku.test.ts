@@ -32,7 +32,7 @@ describe("sudoku-core", () => {
   describe("generate method", () => {
     it("should generate a valid easy difficulty board", async () => {
       //Arrange
-      const sudokuBoard = await generate("easy");
+      const sudokuBoard = await generate({ difficulty: "easy" });
 
       //Act
       const data = await analyze(sudokuBoard);
@@ -43,7 +43,7 @@ describe("sudoku-core", () => {
     });
     it("should generate a valid medium difficulty board", async () => {
       //Arrange
-      const sudokuBoard = await generate("medium");
+      const sudokuBoard = await generate({ difficulty: "medium" });
 
       //Act
       const data = await analyze(sudokuBoard);
@@ -51,9 +51,9 @@ describe("sudoku-core", () => {
       expect(data.difficulty).toBe("medium");
       expect(isUniqueSolution(sudokuBoard)).toBe(true);
     });
-    it.skip("should generate a valid hard difficulty board", async () => {
+    it("should generate a valid hard difficulty board", async () => {
       //Arrange
-      const sudokuBoard = await generate("hard");
+      const sudokuBoard = await generate({ difficulty: "hard" });
 
       //Act
       const data = await analyze(sudokuBoard);
@@ -66,7 +66,7 @@ describe("sudoku-core", () => {
     // up to 166 sec
     it.skip("should generate a valid expert difficulty board", async () => {
       //Arrange
-      const sudokuBoard = await generate("expert");
+      const sudokuBoard = await generate({ difficulty: "expert" });
 
       //Act
       const data = await analyze(sudokuBoard);
@@ -79,7 +79,7 @@ describe("sudoku-core", () => {
     // up to 15 sec
     it.skip("should generate a valid master difficulty board", async () => {
       //Arrange
-      const sudokuBoard = await generate("master");
+      const sudokuBoard = await generate({ difficulty: "master" });
 
       //Act
       const data = await analyze(sudokuBoard);
