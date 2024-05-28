@@ -5,7 +5,9 @@ import {
   CANDIDATES,
   NULL_CANDIDATE_LIST,
   GROUP_OF_HOUSES,
-  CANDIDATES_2, NULL_CANDIDATE_LIST_2,
+  FULL_CANDIDATE_LIST,
+  CANDIDATES_2,
+  NULL_CANDIDATE_LIST_2,
 } from "./constants";
 import { isUniqueSolution } from "./sudoku-solver";
 
@@ -35,6 +37,7 @@ import {
   isHardEnough,
   isValidAndEasyEnough,
   nakedCandidatesStrategy,
+  numberToArray,
   openSinglesStrategy,
   pointingEliminationStrategy,
   setBoardCellWithRandomCandidate,
@@ -68,7 +71,7 @@ export async function createSudokuInstance(options: Options = {}) {
     board = board.map((cell) => {
       return {
         ...cell,
-        candidates: cell.value === null ? CANDIDATES.slice() : cell.candidates,
+        candidates: cell.value === null ? FULL_CANDIDATE_LIST : cell.candidates,
       };
     });
   };
@@ -79,40 +82,62 @@ export async function createSudokuInstance(options: Options = {}) {
     {
       postFn: updateCandidatesBasedOnCellsValue,
       title: "Open Singles Strategy",
-      fn: () =>
-        openSinglesStrategy(board, usedStrategies, strategies, onFinish),
+      fn: () => {
+        // console.log("Open Singles Strategy");
+        return openSinglesStrategy(board, usedStrategies, strategies, onFinish);
+      },
       score: 0.1,
       type: "value",
     },
     {
       postFn: updateCandidatesBasedOnCellsValue,
       title: "Visual Elimination Strategy",
-      fn: visualEliminationStrategy,
+      fn: (...args) => {
+        // console.log("Visual Elimination Strategy");
+
+        visualEliminationStrategy(...args);
+      },
       score: 9,
       type: "value",
     },
     {
       postFn: updateCandidatesBasedOnCellsValue,
       title: "Single Candidate Strategy",
-      fn: singleCandidateStrategy,
+      fn: (...args) => {
+        // console.log("Single Candidate Strategy");
+
+        singleCandidateStrategy(...args);
+      },
       score: 8,
       type: "value",
     },
     {
       title: "Naked Pair Strategy",
-      fn: nakedPairStrategy,
+      fn: (...args) => {
+        // console.log("Naked Pair Strategy");
+
+        nakedPairStrategy(...args);
+      },
       score: 50,
       type: "elimination",
     },
     {
       title: "Pointing Elimination Strategy",
-      fn: pointingEliminationStrategy,
+      fn: (...args) => {
+        // console.log("Pointing Elimination Strategy");
+
+        pointingEliminationStrategy(...args);
+      },
       score: 80,
       type: "elimination",
     },
     {
       title: "Hidden Pair Strategy",
-      fn: hiddenPairStrategy,
+      fn: (...args) => {
+        // console.log("Hidden Pair Strategy");
+
+        hiddenPairStrategy(...args);
+      },
       score: 90,
       type: "elimination",
     },
@@ -151,7 +176,7 @@ export async function createSudokuInstance(options: Options = {}) {
       board = Array.from({ length: BOARD_SIZE * BOARD_SIZE }, (_, index) => {
         const value = initBoard?.[index] ?? null;
         const candidates =
-          value == null ? [...CANDIDATES] : [...NULL_CANDIDATE_LIST];
+          value == null ? FULL_CANDIDATE_LIST : NULL_CANDIDATE_LIST;
 
         return { value, candidates, invalidCandidates: NULL_CANDIDATE_LIST_2 };
       });
@@ -172,17 +197,17 @@ export async function createSudokuInstance(options: Options = {}) {
     for (let houseType = 0; houseType < groupOfHousesLength; houseType++) {
       for (let houseIndex = 0; houseIndex < BOARD_SIZE; houseIndex++) {
         const house = GROUP_OF_HOUSES[houseType][houseIndex];
-        const digits = getRemainingNumbers(house, board);
+        const digits = numberToArray(getRemainingNumbers(house, board));
 
-        for (let digitIndex = 0; digitIndex < digits.length; digitIndex++) {
-          const digit = digits[digitIndex];
+        for (let i = 0; i < digits.length; i++) {
+          const digit = digits[i];
           const possibleCells: number[] = [];
 
           for (let cellIndex = 0; cellIndex < BOARD_SIZE; cellIndex++) {
             const cell = house[cellIndex];
             const boardCell = board[cell];
 
-            if (contains(boardCell.candidates, digit)) {
+            if (boardCell.candidates & CANDIDATES[digit]) {
               possibleCells.push(cell);
 
               if (possibleCells.length > 1) {
@@ -226,8 +251,6 @@ export async function createSudokuInstance(options: Options = {}) {
 
   const invalidPreviousCandidateAndStartOver = (cellIndex: number) => {
     const previousIndex = cellIndex - 1;
-    // board[previousIndex].invalidCandidates =
-    //   board[previousIndex].invalidCandidates || 0;
 
     if (board[previousIndex].value) {
       board[previousIndex].invalidCandidates =
@@ -247,7 +270,8 @@ export async function createSudokuInstance(options: Options = {}) {
     }
     if (setBoardCellWithRandomCandidate(cellIndex, board)) {
       generateBoardAnswerRecursively(cellIndex + 1);
-    } else {
+    } else if (cellIndex >= 1) {
+      // (cellIndex >= 1) ??????????????????
       invalidPreviousCandidateAndStartOver(cellIndex);
     }
   };
@@ -324,11 +348,15 @@ export async function createSudokuInstance(options: Options = {}) {
       usedStrategies: filterAndMapStrategies(strategies, usedStrategies),
     };
 
+    // console.log(data.hasSolution);
+
     if (data.hasSolution) {
       const boardDiff = calculateBoardDifficulty(usedStrategies, strategies);
       data.difficulty = boardDiff.difficulty;
       data.score = boardDiff.score;
+    } else {
     }
+    // console.log(JSON.stringify(board));
 
     // usedStrategies = usedStrategiesClone.slice();
     board = boardClone;
@@ -356,9 +384,12 @@ export async function createSudokuInstance(options: Options = {}) {
     async function isBoardTooEasy() {
       await prepareGameBoard();
       const data = await analyzeBoard();
+      // console.log(data);
       if (data.hasSolution && data.difficulty) {
+        // console.log("DEEP");
         return !isHardEnough(difficulty, data.difficulty);
       }
+      // console.log("TRUE");
       return true;
     }
 
@@ -366,9 +397,11 @@ export async function createSudokuInstance(options: Options = {}) {
       board = slicedBoard.slice();
     }
 
+    console.log("111");
     while (await isBoardTooEasy()) {
       restoreBoardAnswer();
     }
+    console.log("222");
 
     updateCandidatesBasedOnCellsValue(board);
     return getBoard();

@@ -28,7 +28,7 @@ export function isInvalid(
   return res.size === 0 ? false : [...res];
 }
 
-function solveSudoku(board: Board): number {
+export function solveSudoku(board: Board): number {
   let solutionCount = 0;
 
   _solveSudoku();

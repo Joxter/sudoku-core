@@ -7,6 +7,7 @@ import {
   DIFFICULTY_HARD,
   DIFFICULTY_MASTER,
   DIFFICULTY_MEDIUM,
+  FULL_CANDIDATE_LIST,
   GROUP_OF_HOUSES,
   NULL_CANDIDATE_LIST,
   NULL_CANDIDATE_LIST_2,
@@ -25,6 +26,7 @@ import {
   StrategyFn,
   Update,
 } from "./types";
+import { isUniqueSolution, solveSudoku } from "./sudoku-solver";
 
 //array contains function
 export const contains = (array: Array<unknown>, object: unknown) => {
@@ -155,13 +157,14 @@ export const addValueToCellIndex = (
 ) => {
   board[cellIndex].value = value;
   if (value !== null) {
-    board[cellIndex].candidates = NULL_CANDIDATE_LIST.slice();
+    board[cellIndex].candidates = NULL_CANDIDATE_LIST;
   }
 };
 
-export const getRandomCandidateOfCell = (candidates: Array<CellValue>) => {
-  const randomIndex = Math.floor(Math.random() * candidates.length);
-  return candidates[randomIndex];
+export const getRandomCandidateOfCell = (candidates: number) => {
+  let arr = numberToArray(candidates);
+  const randomIndex = Math.floor(Math.random() * arr.length);
+  return arr[randomIndex];
 };
 
 /* calculateBoardDifficulty
@@ -215,7 +218,7 @@ export function cloneBoard(board: InternalBoard) {
   return board.map((c) => {
     return {
       value: c.value,
-      candidates: c.candidates.slice(),
+      candidates: c.candidates,
       invalidCandidates: c.invalidCandidates,
     };
   });
@@ -233,29 +236,63 @@ export function isValidAndEasyEnough(
 }
 
 /* updateCandidatesBasedOnCellsValue
-* --------------
-* ALWAYS returns false
-* -- special compared to other strategies: doesn't step - updates whole board,
-in one go. Since it also only updates candidates, we can skip straight to next strategy, since we know that neither this one nor the one(s) before (that only look at actual numbers on board), will find anything new.
-* -----------------------------------------------------------------*/
+ * --------------
+ * ALWAYS returns false
+ * -- special compared to other strategies: doesn't step - updates whole board, in one go. Since it also
+ * only updates candidates, we can skip straight to next strategy, since we know that neither this one
+ * nor the one(s) before (that only look at actual numbers on board), will find anything new.
+ * -----------------------------------------------------------------*/
+let lastopenCell = Array(500)
+  .fill(0)
+  .map((_, i) => i);
+
 export function updateCandidatesBasedOnCellsValue(board: InternalBoard) {
   const groupOfHousesLength = GROUP_OF_HOUSES.length;
+
+  // console.log();
+
+  lastopenCell.push(board.filter((it) => it.value).length);
+  lastopenCell.shift();
+
+  let DEBUG = lastopenCell.every((it) => it === lastopenCell[0]);
+  if (DEBUG) {
+    // console.log(JSON.stringify(board));
+    // printBoard(board);
+    // console.log("CNT:", solveSudoku(board.map((it) => it.value)));
+    // throw 2;
+  }
 
   for (let houseType = 0; houseType < groupOfHousesLength; houseType++) {
     for (let houseIndex = 0; houseIndex < BOARD_SIZE; houseIndex++) {
       const house = GROUP_OF_HOUSES[houseType][houseIndex];
-      const candidatesToRemove = getUsedNumbers(house, board);
+      const candidatesToRemove = arrayToNumber(getUsedNumbers(house, board));
+      // if (DEBUG) {
+      //   console.log(
+      //     getUsedNumbers(house, board),
+      //     candidatesToRemove.toString(2),
+      //   );
+      // }
 
       for (let cellIndex = 0; cellIndex < BOARD_SIZE; cellIndex++) {
         const cell = board[house[cellIndex]];
-        cell.candidates = cell.candidates.filter(
-          (candidate) => !candidatesToRemove.includes(candidate),
-        );
+        cell.candidates = removeCandidates(cell.candidates, candidatesToRemove);
+        // console.log(houseIndex, cell.candidates.toString(2));
       }
     }
   }
+  // if (DEBUG) throw 2;
 
   return false;
+}
+
+export function arrayToNumber(arr: (number | null)[]) {
+  return (arr.filter((it) => !!it) as number[]).reduce((acc, n) => {
+    return acc | CANDIDATES[n];
+  }, 0);
+}
+
+export function removeCandidates(cell: number, candidates: number) {
+  return cell & (~candidates & FULL_CANDIDATE_LIST);
 }
 
 /* getUsedNumbers
@@ -274,10 +311,10 @@ function getUsedNumbers(house: House, board: InternalBoard) {
 export function getRemainingNumbers(
   house: House,
   board: InternalBoard,
-): Array<number> {
-  const usedNumbers = getUsedNumbers(house, board);
+): number {
+  const usedNumbers = arrayToNumber(getUsedNumbers(house, board));
 
-  return CANDIDATES.filter((candidate) => !usedNumbers.includes(candidate));
+  return ~usedNumbers & FULL_CANDIDATE_LIST;
 }
 
 /* getRemainingCandidates
@@ -287,8 +324,8 @@ export function getRemainingNumbers(
 function getRemainingCandidates(
   cellIndex: number,
   board: InternalBoard,
-): Array<CellValue> {
-  return board[cellIndex].candidates.filter((candidate) => candidate !== null);
+): number {
+  return board[cellIndex].candidates;
 }
 
 /* getPossibleCellsForCandidate
@@ -300,8 +337,8 @@ function getPossibleCellsForCandidate(
   house: House,
   board: InternalBoard,
 ) {
-  return house.filter((cellIndex) =>
-    board[cellIndex].candidates.includes(candidate),
+  return house.filter(
+    (cellIndex) => board[cellIndex].candidates & CANDIDATES[candidate],
   );
 }
 
@@ -383,11 +420,8 @@ export function hiddenLockedCandidates(number: number, board: InternalBoard) {
           );
         }
 
-        const candidatesToRemove = [];
-        for (let c = 0; c < BOARD_SIZE; c++) {
-          if (!contains(combinedCandidates, c + 1))
-            candidatesToRemove.push(c + 1);
-        }
+        const candidatesToRemove = arrayToNumber(combinedCandidates);
+
         //log("candidates to remove:")
         //log(candidatesToRemove);
 
@@ -422,9 +456,10 @@ export function hiddenLockedCandidates(number: number, board: InternalBoard) {
     //for each such house
     for (let j = 0; j < BOARD_SIZE; j++) {
       const house = GROUP_OF_HOUSES[i][j];
-      if (getRemainingNumbers(house, board).length <= number)
+      if (getOnesCnt(getRemainingNumbers(house, board)) <= number)
         //can't eliminate any candidates
         continue;
+
       combineInfo = [];
       minIndexes = [-1];
 
@@ -449,7 +484,7 @@ export function nakedCandidatesStrategy(
     for (let j = 0; j < BOARD_SIZE; j++) {
       const house = GROUP_OF_HOUSES[i][j];
 
-      if (getRemainingNumbers(house, board).length <= number) {
+      if (getOnesCnt(getRemainingNumbers(house, board)) <= number) {
         continue;
       }
 
@@ -481,23 +516,21 @@ export function nakedCandidatesStrategy(
       const cell = house[i];
       const cellCandidates = getRemainingCandidates(cell, board);
 
-      if (cellCandidates.length === 0 || cellCandidates.length > number) {
+      if (
+        getOnesCnt(cellCandidates) === 0 ||
+        getOnesCnt(cellCandidates) > number
+      ) {
         continue;
       }
 
       if (combineInfo.length > 0) {
-        const temp = [...cellCandidates];
+        let temp = cellCandidates;
 
         for (let a = 0; a < combineInfo.length; a++) {
-          const candidates = combineInfo[a].candidates || [];
-          for (let b = 0; b < candidates.length; b++) {
-            if (!temp.includes(candidates[b])) {
-              temp.push(candidates[b]);
-            }
-          }
+          temp = temp | combineInfo[a].candidates;
         }
 
-        if (temp.length > number) {
+        if (getOnesCnt(temp) > number) {
           continue;
         }
       }
@@ -514,13 +547,11 @@ export function nakedCandidatesStrategy(
 
       if (combineInfo.length === number) {
         const cellsWithCandidates: number[] = [];
-        let combinedCandidates: Array<CellValue> = [];
+        let combinedCandidates = 0;
 
         for (let x = 0; x < combineInfo.length; x++) {
           cellsWithCandidates.push(combineInfo[x].cell);
-          combinedCandidates = combinedCandidates.concat(
-            combineInfo[x].candidates || [],
-          );
+          combinedCandidates = combinedCandidates | combineInfo[x].candidates;
         }
 
         const cellsEffected = house.filter(
@@ -549,27 +580,44 @@ export function nakedCandidatesStrategy(
   }
 }
 
+export function getOnesCnt(n: number) {
+  return n
+    .toString(2)
+    .split("")
+    .filter((it) => it === "1").length;
+}
+
+export function numberToArray(num: number): number[] {
+  return num
+    .toString(2)
+    .split("")
+    .reverse()
+    .map((n, i, all) => {
+      return +n ? i : null;
+    })
+    .filter((it) => !!it) as number[];
+}
+
 // Function to remove certain candidates from multiple cells
 function removeCandidatesFromMultipleCells(
   cells: Array<number>,
-  candidates: Array<CellValue>,
+  candidates: number,
   board: InternalBoard,
 ): Array<{ index: number; eliminatedCandidate: number }> {
-  const cellsUpdated = [];
+  const cellsUpdated: { index: number; eliminatedCandidate: number }[] = [];
   for (let i = 0; i < cells.length; i++) {
-    const cellCandidates = board[cells[i]].candidates;
+    numberToArray(board[cells[i]].candidates).forEach((candidate) => {
+      if (board[cells[i]].candidates & CANDIDATES[candidate - 1]) {
+        board[cells[i]].candidates =
+          board[cells[i]].candidates &
+          (~CANDIDATES[candidate - 1] & FULL_CANDIDATE_LIST); //NOTE: also deletes them from board variable
 
-    for (let j = 0; j < candidates.length; j++) {
-      const candidate = candidates[j];
-      //-1 because candidate '1' is at index 0 etc.
-      if (candidate && cellCandidates[candidate - 1] !== null) {
-        cellCandidates[candidate - 1] = null; //NOTE: also deletes them from board variable
         cellsUpdated.push({
           index: cells[i],
           eliminatedCandidate: candidate,
         }); //will push same cell multiple times
       }
-    }
+    });
   }
   return cellsUpdated;
 }
@@ -586,7 +634,7 @@ export function pointingEliminationStrategy(
   for (let houseType = 0; houseType < groupOfHousesLength; houseType++) {
     for (let houseIndex = 0; houseIndex < BOARD_SIZE; houseIndex++) {
       const house = GROUP_OF_HOUSES[houseType][houseIndex];
-      const digits = getRemainingNumbers(house, board);
+      const digits = numberToArray(getRemainingNumbers(house, board));
 
       for (let digitIndex = 0; digitIndex < digits.length; digitIndex++) {
         const digit = digits[digitIndex];
@@ -600,7 +648,7 @@ export function pointingEliminationStrategy(
         for (let cellIndex = 0; cellIndex < house.length; cellIndex++) {
           const cell = house[cellIndex];
 
-          if (contains(board[cell].candidates, digit)) {
+          if (board[cell].candidates & CANDIDATES[digit]) {
             const cellHouses = housesWithCell(cell);
             const newHouseId = houseType === 2 ? cellHouses[0] : cellHouses[2];
             const newHouseTwoId =
@@ -643,7 +691,7 @@ export function pointingEliminationStrategy(
 
           const cellsUpdated = removeCandidatesFromMultipleCells(
             cellsEffected,
-            [digit],
+            CANDIDATES[digit],
             board,
           );
 
@@ -700,13 +748,16 @@ export function openSinglesStrategy(
         groupOfHouses[i][j],
         board,
       );
+      if (singleEmptyCell) {
+        // console.log(">>22>>>", singleEmptyCell);
+      }
 
       if (singleEmptyCell) {
         return fillSingleEmptyCell(singleEmptyCell, board);
       }
 
       if (isBoardFinished(board)) {
-        onFinish?.(calculateBoardDifficulty(usedStrategies, strategies));
+        // onFinish?.(calculateBoardDifficulty(usedStrategies, strategies));
         return true;
       }
     }
@@ -727,6 +778,10 @@ function findSingleEmptyCellInHouse(house: House, board: InternalBoard) {
     }
   }
 
+  if (emptyCells[0]) {
+    // console.log(emptyCells, board[emptyCells[0].cellIndex]);
+  }
+
   // If only one empty cell found
   return emptyCells.length === 1 ? emptyCells[0] : null;
 }
@@ -739,9 +794,11 @@ function fillSingleEmptyCell(
   board: InternalBoard,
   onError?: (args: { message: string }) => void,
 ) {
-  const value = getRemainingNumbers(emptyCell.house, board);
+  const value = numberToArray(getRemainingNumbers(emptyCell.house, board));
+  // console.log({ value });
 
   if (value.length > 1) {
+    console.log(">>>>>>>>>>>>>> Board Incorrect");
     onError?.({ message: "Board Incorrect" });
     return -1;
   }
@@ -760,23 +817,18 @@ export function visualEliminationStrategy(
 ): ReturnType<StrategyFn> | false {
   for (let cellIndex = 0; cellIndex < board.length; cellIndex++) {
     const cell = board[cellIndex];
-    const candidates = cell.candidates;
+    const candidates = numberToArray(cell.candidates);
 
+    // console.log(cellIndex,candidates);
     const possibleCandidates: CellValue[] = [];
-    for (
-      let candidateIndex = 0;
-      candidateIndex < candidates.length;
-      candidateIndex++
-    ) {
-      if (candidates[candidateIndex] !== null) {
-        possibleCandidates.push(candidates[candidateIndex]);
-      }
+    for (let i = 0; i < candidates.length; i++) {
+      possibleCandidates.push(candidates[i]);
 
       if (possibleCandidates.length > 1) {
         break; // can't find answer here
       }
     }
-
+    /**/
     if (possibleCandidates.length === 1) {
       const digit = possibleCandidates[0];
 
@@ -861,7 +913,7 @@ export function convertInitialBoardToSerializedBoard(
   return new Array(BOARD_SIZE * BOARD_SIZE).fill(null).map((_, i) => {
     const value = _board[i] || null;
     const candidates =
-      value === null ? [...CANDIDATES] : [...NULL_CANDIDATE_LIST];
+      value === null ? FULL_CANDIDATE_LIST : NULL_CANDIDATE_LIST;
 
     return { value, candidates, invalidCandidates: NULL_CANDIDATE_LIST_2 };
   });
@@ -873,11 +925,9 @@ export function setBoardCellWithRandomCandidate(
 ) {
   updateCandidatesBasedOnCellsValue(board);
   const invalids = board[cellIndex].invalidCandidates;
+  const candidates = removeCandidates(board[cellIndex].candidates, invalids);
 
-  const candidates = board[cellIndex].candidates.filter(
-    (candidate) => Boolean(candidate) && !(invalids & CANDIDATES_2[candidate!]),
-  );
-  if (candidates.length === 0) {
+  if (candidates === 0) {
     return false;
   }
   const value = getRandomCandidateOfCell(candidates);
@@ -896,4 +946,16 @@ export function shuffle<T>(array: T[]) {
       array[currentIndex],
     ];
   }
+}
+
+function printBoard(board: InternalBoard) {
+  let res = "";
+
+  for (let i = 0; i < 9; i++) {
+    for (let j = i * 9; j < i * 9 + 9; j++) {
+      res += board[j].value || 0;
+    }
+    res += "\n";
+  }
+  console.log(res);
 }

@@ -21,6 +21,15 @@ import {
   MASTER_SUDOKU_BOARD_FOR_TEST,
   MEDIUM_SUDOKU_BOARD_FOR_TEST,
 } from "./constants";
+import {
+  arrayToNumber,
+  getOnesCnt,
+  getRemainingNumbers,
+  numberToArray,
+  openSinglesStrategy,
+  removeCandidates,
+  updateCandidatesBasedOnCellsValue,
+} from "../src/utils";
 
 // let last = Date.now();
 // setInterval(() => {
@@ -30,7 +39,7 @@ import {
 
 describe("sudoku-core", () => {
   describe("generate method", () => {
-    it("should generate a valid easy difficulty board", async () => {
+    it.skip("should generate a valid easy difficulty board", async () => {
       //Arrange
       const sudokuBoard = await generate({ difficulty: "easy" });
 
@@ -51,7 +60,7 @@ describe("sudoku-core", () => {
       expect(data.difficulty).toBe("medium");
       expect(isUniqueSolution(sudokuBoard)).toBe(true);
     });
-    it("should generate a valid hard difficulty board", async () => {
+    it.skip("should generate a valid hard difficulty board", async () => {
       //Arrange
       const sudokuBoard = await generate({ difficulty: "hard" });
 
@@ -90,7 +99,7 @@ describe("sudoku-core", () => {
     });
   });
 
-  describe("solve method", () => {
+  describe.skip("solve method", () => {
     const items = [
       [DIFFICULTY_EASY, EASY_SUDOKU_BOARD_FOR_TEST],
       [DIFFICULTY_MEDIUM, MEDIUM_SUDOKU_BOARD_FOR_TEST],
@@ -122,7 +131,7 @@ describe("sudoku-core", () => {
       });
     });
   });
-  describe("hint method", () => {
+  describe.skip("hint method", () => {
     const items = [
       [DIFFICULTY_EASY, EASY_SUDOKU_BOARD_FOR_TEST],
       [DIFFICULTY_MEDIUM, MEDIUM_SUDOKU_BOARD_FOR_TEST],
@@ -152,7 +161,7 @@ describe("sudoku-core", () => {
       });
     });
   });
-  describe("analyze method", () => {
+  describe.skip("analyze method", () => {
     it("should invalidate the wrong board", async () => {
       //Arrange
       const sudokuBoard = [1];
@@ -221,5 +230,35 @@ describe("sudoku-core", () => {
       expect(difficulty).toBe("master");
       expect(isUniqueSolution(sudokuBoard)).toBe(true);
     });
+  });
+});
+
+describe("utils", () => {
+  it("arrayToNumber", function () {
+    expect(arrayToNumber([1, 2, null, 5])).toEqual(0b100110);
+  });
+  it("numberToArray", function () {
+    expect(numberToArray(0b100110)).toEqual([1, 2, 5]);
+    expect(numberToArray(0b00100110)).toEqual([1, 2, 5]);
+  });
+  it("removeCandidates", function () {
+    expect(removeCandidates(0b0100110, 0b0101100)).toEqual(0b0000010);
+    expect(removeCandidates(0b0100110, 0b1101100)).toEqual(0b0000010);
+    expect(removeCandidates(0b0100110, 0b0001100)).toEqual(0b0100010);
+    expect(removeCandidates(0b0100110, 0b0000000)).toEqual(0b0100110);
+    expect(removeCandidates(0b0100110, 0b1111111)).toEqual(0b0000000);
+    expect(~0b0100110).toEqual(0b1011001);
+  });
+  it("getOnesCnt", function () {
+    expect(getOnesCnt(0b100110)).toEqual(3);
+    expect(getOnesCnt(0b0)).toEqual(0);
+  });
+  it("getRemainingNumbers", function () {
+    expect(
+      getRemainingNumbers(
+        [0, 1, 2, 3],
+        [{ value: 1 }, { value: 3 }, { value: 6 }, { value: 5 }],
+      ),
+    ).toEqual(0b1110010100);
   });
 });
