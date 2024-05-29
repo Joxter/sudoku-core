@@ -5,6 +5,7 @@ import {
   CANDIDATES,
   NULL_CANDIDATE_LIST,
   GROUP_OF_HOUSES,
+  CANDIDATES_2, NULL_CANDIDATE_LIST_2,
 } from "./constants";
 import { isUniqueSolution } from "./sudoku-solver";
 
@@ -152,7 +153,7 @@ export async function createSudokuInstance(options: Options = {}) {
         const candidates =
           value == null ? [...CANDIDATES] : [...NULL_CANDIDATE_LIST];
 
-        return { value, candidates };
+        return { value, candidates, invalidCandidates: NULL_CANDIDATE_LIST_2 };
       });
     }
   };
@@ -225,19 +226,23 @@ export async function createSudokuInstance(options: Options = {}) {
 
   const invalidPreviousCandidateAndStartOver = (cellIndex: number) => {
     const previousIndex = cellIndex - 1;
-    board[previousIndex].invalidCandidates =
-      board[previousIndex].invalidCandidates || [];
+    // board[previousIndex].invalidCandidates =
+    //   board[previousIndex].invalidCandidates || 0;
 
-    board[previousIndex].invalidCandidates?.push(board[previousIndex].value);
+    if (board[previousIndex].value) {
+      board[previousIndex].invalidCandidates =
+        board[previousIndex].invalidCandidates |
+        CANDIDATES_2[board[previousIndex].value!];
+    }
 
     addValueToCellIndex(board, previousIndex, null);
     resetCandidates();
-    board[cellIndex].invalidCandidates = [];
+    board[cellIndex].invalidCandidates = NULL_CANDIDATE_LIST_2;
     generateBoardAnswerRecursively(previousIndex);
   };
   const generateBoardAnswerRecursively = (cellIndex: number) => {
     if (cellIndex + 1 > BOARD_SIZE * BOARD_SIZE) {
-      board.forEach((cell) => (cell.invalidCandidates = []));
+      board.forEach((cell) => (cell.invalidCandidates = NULL_CANDIDATE_LIST_2));
       return true;
     }
     if (setBoardCellWithRandomCandidate(cellIndex, board)) {

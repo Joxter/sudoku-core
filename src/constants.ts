@@ -7,6 +7,22 @@ export const NULL_CANDIDATE_LIST: Array<null> = new Array(9).fill(null);
 
 export const GROUP_OF_HOUSES = generateHouseIndexList(BOARD_SIZE);
 
+export const CANDIDATES_2 = [
+  1 << 0,
+  1 << 1,
+  1 << 2,
+  1 << 3,
+  1 << 4,
+  1 << 5,
+  1 << 6,
+  1 << 7,
+  1 << 8,
+  1 << 9,
+];
+
+export const FULL_CANDIDATE_LIST_2 = 0b1111111110;
+export const NULL_CANDIDATE_LIST_2 = 0;
+
 export const DIFFICULTY_EASY = "easy";
 export const DIFFICULTY_MEDIUM = "medium";
 export const DIFFICULTY_HARD = "hard";

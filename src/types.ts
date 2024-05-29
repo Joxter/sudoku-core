@@ -18,7 +18,7 @@ export type CellValue = number | null;
 export type Cell = {
   value: CellValue;
   candidates: Array<CellValue>;
-  invalidCandidates?: Array<CellValue>;
+  invalidCandidates: number;
 };
 export type InternalBoard = Array<Cell>;
 

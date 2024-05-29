@@ -1,6 +1,7 @@
 import {
   BOARD_SIZE,
   CANDIDATES,
+  CANDIDATES_2,
   DIFFICULTY_EASY,
   DIFFICULTY_EXPERT,
   DIFFICULTY_HARD,
@@ -8,6 +9,7 @@ import {
   DIFFICULTY_MEDIUM,
   GROUP_OF_HOUSES,
   NULL_CANDIDATE_LIST,
+  NULL_CANDIDATE_LIST_2,
 } from "./constants";
 import {
   AnalyzeData,
@@ -214,9 +216,7 @@ export function cloneBoard(board: InternalBoard) {
     return {
       value: c.value,
       candidates: c.candidates.slice(),
-      invalidCandidates: c.invalidCandidates
-        ? c.invalidCandidates.slice()
-        : c.invalidCandidates,
+      invalidCandidates: c.invalidCandidates,
     };
   });
 }
@@ -863,7 +863,7 @@ export function convertInitialBoardToSerializedBoard(
     const candidates =
       value === null ? [...CANDIDATES] : [...NULL_CANDIDATE_LIST];
 
-    return { value, candidates };
+    return { value, candidates, invalidCandidates: NULL_CANDIDATE_LIST_2 };
   });
 }
 
@@ -872,9 +872,10 @@ export function setBoardCellWithRandomCandidate(
   board: InternalBoard,
 ) {
   updateCandidatesBasedOnCellsValue(board);
-  const invalids = board[cellIndex].invalidCandidates || [];
+  const invalids = board[cellIndex].invalidCandidates;
+
   const candidates = board[cellIndex].candidates.filter(
-    (candidate) => Boolean(candidate) && !invalids.includes(candidate),
+    (candidate) => Boolean(candidate) && !(invalids & CANDIDATES_2[candidate!]),
   );
   if (candidates.length === 0) {
     return false;
